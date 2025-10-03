@@ -1,0 +1,96 @@
+services:
+  # Aplicación Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        user: laravel
+        uid: 1000
+    image: chain-poc-app
+    container_name: chain-poc-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - chain-poc-network
+    depends_on:
+      - db
+      - redis
+    healthcheck:
+      test: ["CMD", "php-fpm-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Servidor Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: chain-poc-nginx
+    restart: unless-stopped
+    ports:
+      - "8003:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - chain-poc-network
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # Base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: chain-poc-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    ports:
+      - "3306:3306"
+    networks:
+      - chain-poc-network
+
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: chain-poc-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - chain-poc-network
+
+  # PhpMyAdmin (opcional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: chain-poc-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    networks:
+      - chain-poc-network
+    depends_on:
+      - db
+
+networks:
+  chain-poc-network:
+    driver: bridge
+
+volumes:
+  dbdata:
