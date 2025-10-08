@@ -46,23 +46,17 @@ echo -e "${GREEN}6. Generando clave de aplicación...${NC}"
 docker-compose exec app php artisan key:generate
 
 echo ""
-echo -e "${GREEN}7. Ejecutando migraciones...${NC}"
-docker-compose exec app php artisan migrate --force
-
-echo ""
-echo -e "${GREEN}8. Instalando Laravel Sanctum...${NC}"
-docker-compose exec app composer require laravel/sanctum
-docker-compose exec app php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-docker-compose exec app php artisan migrate
-
-echo ""
-echo -e "${GREEN}9. Limpiando caché...${NC}"
+echo -e "${GREEN}7. Limpiando caché...${NC}"
 docker-compose exec app php artisan config:clear
 docker-compose exec app php artisan cache:clear
 docker-compose exec app php artisan route:clear
 
 echo ""
-echo -e "${GREEN}10. Configurando permisos...${NC}"
+echo -e "${GREEN}8. Ejecutando migraciones...${NC}"
+docker-compose exec app php artisan migrate:fresh --seed
+
+echo ""
+echo -e "${GREEN}9. Configurando permisos...${NC}"
 docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 echo ""
@@ -71,8 +65,8 @@ echo -e "${GREEN}   ✓ Instalación completada!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 echo -e "${GREEN}La API está disponible en:${NC}"
-echo -e "  - API: ${BLUE}http://localhost:8000/api${NC}"
-echo -e "  - Health Check: ${BLUE}http://localhost:8000/api/health${NC}"
+echo -e "  - API: ${BLUE}http://localhost:8003/api${NC}"
+echo -e "  - Health Check: ${BLUE}http://localhost:8003/api/health${NC}"
 echo -e "  - PhpMyAdmin: ${BLUE}http://localhost:8080${NC}"
 echo ""
 echo -e "${GREEN}Para ver los logs:${NC}"
